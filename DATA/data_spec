@@ -1,0 +1,15 @@
+This file will briefly describe the data to be measured during gameplay
+to allow for future user experience analysis
+
+- Username : name user inputted into the game instance. This will obviously
+ bring complications, including whether two games conducted with the same username actually
+ comes from the same user. A workaround would be a personalised profile (with a password).
+ However, for simplicity, we will omit this capability.
+- Action : users action, which is split into 3 main events (started game [sg], started round[sr]
+(where r will represent the round number), input character [i_] (_ refers to the
+ character inputted), completed round [cr], completed game [cg], quit game [qg]).
+This will be stored as two-character string to reduce memory whilst allowing for
+human interpretability of the data.
+- Time : This will record the time point when a user conducted a certain action.
+This will be stored as a datetime object to allow for both macro- (date-level) and micro-
+(second/minute-level) analyses of user experience.
