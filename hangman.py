@@ -24,7 +24,7 @@ class Hangman:
         # User Interaction data
         try:
             self.ux_data = pd.read_csv(os.path.join(os.getcwd(), 'DATA', 'ux_data.csv'))
-        except:
+        except FileNotFoundError:
             self.ux_data = None
 
         # Scoreboard data
@@ -337,10 +337,7 @@ class Hangman:
         try:
             entry = [datetime.today(), self.username, action]
             entry = pd.DataFrame([entry], columns=['Time', 'Username', 'Action'])
-            try:
-                self.ux_data = pd.concat([self.ux_data, entry], axis=0)
-            except:
-                self.ux_data = pd.DataFrame([entry], columns=['Time', 'Username', 'Action'])
+            self.ux_data = pd.concat([self.ux_data, entry], axis=0)
         except AttributeError:
             pass
 
@@ -362,7 +359,7 @@ class Hangman:
         try:
             scoreboard = pd.read_csv(scoreboard_path, index_col=0)
             scoreboard.loc[:, 'Points'] = scoreboard.loc[:, 'Points'].astype(int)
-        except:
+        except FileNotFoundError:
             scoreboard = None
 
         return scoreboard
@@ -377,10 +374,9 @@ class Hangman:
 
         try:
             self.scoreboard.at[self.username, 'Points'] += counter
-        except IndexError:
-            self.scoreboard = pd.concat([self.scoreboard, [self.username, counter]])
-        except AttributeError:
-            self.scoreboard = pd.DataFrame([[self.username, counter]], columns=['Username', 'Points'])
+        except (KeyError, AttributeError):
+            entry = pd.DataFrame([[self.username, counter]], columns=['Username', 'Points'])
+            self.scoreboard = pd.concat([self.scoreboard.reset_index(), entry], axis=0)
             self.scoreboard = self.scoreboard.set_index('Username')
 
     def saveScoreboard(self):
@@ -411,4 +407,9 @@ class Hangman:
 
 
 if __name__ == '__main__':
-    H = Hangman()
+    try:
+        H = Hangman()
+    except ImportError:
+        # Import modules, just in case they are not on the system.
+        os.system('pip install pandas,re,datetime')
+        H = Hangman()
