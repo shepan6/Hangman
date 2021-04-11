@@ -1,5 +1,9 @@
+###
+# AUTHORED by Alex Shepherd
+#
+# Date Created 11/04/2021
+###
 import pandas as pd
-import numpy as np
 import os
 import re
 from datetime import datetime
@@ -50,8 +54,6 @@ class Hangman:
         else:
             # Adding action data to say that user has quit game.
             self.quitGame()
-
-
 
     @staticmethod
     def checkValidName(name):
@@ -139,7 +141,8 @@ class Hangman:
 
         return user_answer
 
-    def inputChar(self):
+    @staticmethod
+    def inputChar():
         """
         Asks user for next character guess in the game and checks whether the text input is valid
         (i.e. one character long and is a alphabetic character.)
@@ -198,7 +201,8 @@ class Hangman:
 
         return correct
 
-    def updateHangmanGraphic(self, incorrect_guesses):
+    @staticmethod
+    def updateHangmanGraphic(incorrect_guesses):
 
         pictures = ["""========
                        +------+
@@ -404,6 +408,7 @@ class Hangman:
             print('=========================')
         except AttributeError:
             pass
+
 
 if __name__ == '__main__':
     H = Hangman()
