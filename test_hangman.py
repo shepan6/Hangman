@@ -10,10 +10,14 @@ class TestHangman(unittest.TestCase):
     def test_checkValidName(self):
 
         true_results = {'alex shepherd' : True,
-                   'al3x ' : False,
-                   'hsjk3j22jd skjd3ks' : False,
-                   'my name' : True,
-                   'Sensyne Health' : True}
+                        'Sensyne Health': True,
+                        'Katherine Double-Barrel' : True,
+                        'Keith Tri-ple-Barrel' : True,
+                        'Gary Middle Name' : True,
+                        'a ridiculously long name which should not pass-the-test': False,
+                        'al3x ' : False,
+                        'hsjk3j22jd skjd3ks' : False,
+                        'my name' : True}
 
         for tc in true_results.keys():
             method_result = hangman.Hangman.checkValidName(tc)

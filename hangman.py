@@ -26,8 +26,22 @@ class Hangman:
             self.user_data = None
 
     def checkValidName(self, name):
+        """
+        Checks that the inputted name from the user is a valid name (i.e. one which contains
+        alphabetic characters only. The regular expression warrants the user putting in their first
+        (and surname).
+        Names are also restricted to 50 characters maximum so that, when it comes to
+        storing names into a SQL database, we can ensure that name string will not go ad infinitum.
+        :param
+        name: String
+            Inputted name from user
+        :return
+        Tuple of Booleans
+            1) If inputted name matches regular expression.
+            2) If length of the name is under 50 characters
+        """
 
-        return re.match(pattern=r'[a-zA-Z]+ ?[a-zA-Z]+', string=name)
+        return re.match(pattern=r'([a-zA-Z]+[ -]?)+', string=name), len(name) <= 50
 
     def getName(self):
         """
@@ -35,12 +49,28 @@ class Hangman:
         The method also checks that input name string is a valid name (i.e. does not
         contain numbers, etc.)
 
-        :return:
+        :return
         name : String
             Name of the user
         """
 
-        pass
+        # Tracker variable for while loop to track if inputted name is valid
+        valid = False
+
+        while not valid:
+            name = str(input('Name >> '))
+            v1, v2 = self.checkValidName(name)
+            valid = v1 and v2
+            if name == 'quit':
+                # Adding action data to say that user has quit game.
+                self.addActionData('qg')
+                break
+            if not v1:
+                print('Please type a valid name (e.g. Joe Blogs or Joe)')
+            if not v2:
+                print('The name you have given is too long. Please write a shorter name!')
+
+        return name
 
     def readAnswers(self, answer_path):
         """
