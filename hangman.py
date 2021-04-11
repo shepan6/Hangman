@@ -172,7 +172,7 @@ class Hangman:
                                      repl='_')
             new_user_answer = ' '.join(list(new_user_answer))
 
-            self.user_answer = new_user_answer
+            self.user_answer = new_user_answer.upper()
             correct = True
         else:
             # Incorrect guess
@@ -181,7 +181,63 @@ class Hangman:
         return correct
 
     def updateHangmanGraphic(self, incorrect_guesses):
-        pass
+
+        pictures = ["""========
+                       +------+
+                       |      |
+                       O      |
+                      /|\     |
+                      / \     |
+                              |
+                       ========
+                            """,
+                    """========
+                       +------+
+                       |      |
+                       O      |
+                      /|\     |
+                      /       |
+                              |
+                       ========
+                            """,
+                    """========
+                       +------+
+                       |      |
+                       O      |
+                      /|\     |
+                              |
+                              |
+                       ========
+                            """,
+                    """========
+                       +------+
+                       |      |
+                       O      |
+                      /|      |
+                              |
+                              |
+                       ========
+                            """,
+                    """========
+                       +------+
+                       |      |
+                       O      |
+                              |
+                              |
+                              |
+                       ========
+                            """,
+                    """========
+                       +------+
+                       |      |
+                              |
+                              |
+                              |
+                              |
+                       ========
+                            """]
+
+        print(pictures[incorrect_guesses])
 
     def game(self):
 
@@ -232,6 +288,7 @@ class Hangman:
     def quitGame(self):
         self.addActionData('qg')
         self.saveActionData()
+        self.showTop10()
         print('Goodbye, {}!'.format(self.username))
 
     # -----
@@ -260,7 +317,6 @@ class Hangman:
 
         self.ux_data.to_csv(os.path.join(os.getcwd(), "DATA", 'ux_data.csv'))
 
-
     # -----
     # SCOREBOARD
     # -----
@@ -268,20 +324,38 @@ class Hangman:
     @staticmethod
     def loadScoreboard(scoreboard_path):
 
-        scoreboard = pd.read_csv(scoreboard_path, index_col=0)
+        try:
+            scoreboard = pd.read_csv(scoreboard_path, index_col=0)
+            scoreboard.loc[:, 'Points'] = scoreboard.loc[:, 'Points'].astype(int)
+        except:
+            scoreboard = None
 
         return scoreboard
 
     def updateScoreboard(self):
 
-        self.scoreboard.at[self.username, 'Points'] += 10
+        # Adding 1 to the user's score to reduce space complexity.
+        try:
+            self.scoreboard.at[self.username, 'Points'] += 1
+        except IndexError:
+            self.scoreboard = pd.concat([self.scoreboard, [self.username, 1]])
+        except ValueError:
+            self.scoreboard = pd.DataFrame([self.username, 1], columns=['Username', 'Points'])
+            self.scoreboard = self.scoreboard.set_index('Username')
 
+    def showTop10(self):
+        """
+        Presents top 10 scoring users on the terminal
 
-"""
-  +---+
-  |   |
-  O   |
- /|\  |
- / \  |
-      |
-"""
+        :return:
+        """
+
+        pointsPerGame = 10
+
+        # Sorting entries by Points, with highest first.
+        self.scoreboard = self.scoreboard.sort_values('Points', ascending=False)
+        # Multiplying by points per game to get total points.
+        self.scoreboard.loc[:, 'Points'] = self.scoreboard.loc[:, 'Points'] * pointsPerGame
+
+        # Showing top 10 scorers.
+        print(self.scoreboard.head(10))
