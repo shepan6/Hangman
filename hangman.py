@@ -397,6 +397,9 @@ class Hangman:
             scoreboard = self.scoreboard.sort_values('Points', ascending=False)
             # Multiplying by points per game to get total points.
             scoreboard.loc[:, 'Points'] = scoreboard.loc[:, 'Points'] * pointsPerGame
+            scoreboard.loc[:, 'Rank'] = scoreboard['Points'].rank(method='min',
+                                                                  ascending=False).astype(int)
+
 
             # Showing top 10 scorers.
             print('=====THE LEADERBOARD=====')
