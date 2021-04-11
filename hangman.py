@@ -13,25 +13,45 @@ class Hangman:
     """
 
     def __init__(self):
-        # Prompt user for name
-        self.username = self.getName(user=True)
-        # To also give the stickman a name!
-        self.hangman_name = self.getName(user=False)
-        # Answers to the Hangman game
-        self.answer = self.getAnswer(os.path.join(os.getcwd(), 'DATA', 'answers.csv'))
-        # Scoreboard data
-        self.scoreboard = self.loadScoreboard(
-            os.path.join(os.getcwd(), 'DATA', 'scoreboard.csv')
-        )
-        # User's answer
-        self.user_answer = None
+
+        print('''WELCOME TO HANGMAN!!!
+        To quit the game, simply type \'quit\'''')
+
         # User Interaction data
         try:
             self.ux_data = pd.read_csv(os.path.join(os.getcwd(), 'DATA', 'ux_data.csv'))
         except:
             self.ux_data = None
-        # Log starting the game
-        self.addActionData('sg')
+
+        # Scoreboard data
+        self.scoreboard = self.loadScoreboard(
+            os.path.join(os.getcwd(), 'DATA', 'scoreboard.csv')
+        )
+
+        # Prompt user for name
+        self.username = self.getName(user=True)
+
+        if self.username != 'quit':
+            # To also give the stickman a name!
+            self.hangman_name = self.getName(user=False)
+            if self.hangman_name != 'quit':
+                # Answers to the Hangman game
+                self.answer = self.getAnswer(os.path.join(os.getcwd(), 'DATA', 'answers.csv'))
+
+                # User's answer
+                self.user_answer = None
+
+                # Log starting the game
+                self.addActionData('sg')
+
+                self.game()
+            else:
+                self.quitGame()
+        else:
+            # Adding action data to say that user has quit game.
+            self.quitGame()
+
+
 
     @staticmethod
     def checkValidName(name):
@@ -82,8 +102,6 @@ class Hangman:
             v1, v2 = self.checkValidName(name)
             valid = v1 and v2
             if name == 'quit':
-                # Adding action data to say that user has quit game.
-                self.quitGame()
                 break
             if not v1:
                 print('Please type a valid name (e.g. Joe Blogs or Joe)')
@@ -107,7 +125,7 @@ class Hangman:
         # Selecting the first answer in the shuffled dataframe.
         answer = answers.iloc[0, 0]
 
-        return answer
+        return answer.lower()
 
     # -----
     # GAMEPLAY
@@ -116,7 +134,7 @@ class Hangman:
     def setUpRound(self):
 
         # To -1 character to remove final space
-        user_answer = re.sub(string=self.answer, pattern=r'\w', repl='_ ')[:-1]
+        user_answer = re.sub(string=self.answer, pattern=r'[a-z]', repl='_ ')[:-1]
         print(user_answer)
 
         return user_answer
@@ -136,12 +154,12 @@ class Hangman:
         while char is None:
             char = str(input('>>>'))
             if len(char) != 1:
-                # Either entered 0 or 2+ characters
-                char = None
-                print('Please insert only one character!')
                 if char == 'quit':
-                    self.quitGame()
                     break
+                else:
+                    # Either entered 0 or 2+ characters
+                    char = None
+                    print('Please insert only one character!')
             elif char.isdigit():
                 char = None
                 print('Please insert a letter from the alphabet!')
@@ -248,7 +266,7 @@ class Hangman:
         # The current answer presented to the user.
         self.user_answer = self.setUpRound()
 
-        while self.user_answer.count('_') > 0 and incorrect_guesses <= 0:
+        while self.user_answer.count('_') > 0 and incorrect_guesses > 0:
             # Ask user for a valid character
             char = self.inputChar()
 
@@ -263,6 +281,8 @@ class Hangman:
             else:
                 # Adding user guess to user_guesses list
                 user_guesses.append(char)
+            if char == 'quit':
+                break
 
             correct = self.updateUserAnswer(user_guesses)
 
@@ -275,13 +295,16 @@ class Hangman:
             else:
                 print('{} is in the word(s)! Good job, {}!'.format(user_guesses[-1], self.username))
 
+            print(self.user_answer)
+
         if incorrect_guesses <= 0:
             print("""Uh oh!! It looks like {} is dead! Sorry, {},
-            maybe you can save {} next time!!""".format(self.username, self.hangman_name,
+            maybe you can save {} next time!!""".format(self.hangman_name, self.username,
                                                         self.hangman_name))
+            self.updateScoreboard(success=False)
         elif self.user_answer.count('_') == 0:
             print("""WELL DONE {}!!! {} can live for another day!""".format(self.username, self.hangman_name))
-            self.updateScoreboard()
+            self.updateScoreboard(success=True)
 
         self.quitGame()
 
@@ -289,7 +312,10 @@ class Hangman:
         self.addActionData('qg')
         self.saveActionData()
         self.showTop10()
-        print('Goodbye, {}!'.format(self.username))
+        if self.username != 'quit':
+            print('Goodbye, {}!'.format(self.username))
+        else:
+            print('Goodbye!')
 
     # -----
     # ACTION DATA
@@ -303,11 +329,14 @@ class Hangman:
             Two-character long reference to game action
         """
 
-        entry = [datetime.today(), self.username, action]
         try:
-            entry = pd.concat([self.ux_data, np.array(entry)], axis=0)
-        except:
-            self.ux_data = pd.DataFrame(entry, columns=['Time', 'Username', 'Action'])
+            entry = [datetime.today(), self.username, action]
+            try:
+                entry = pd.concat([self.ux_data, np.array(entry)], axis=0)
+            except:
+                self.ux_data = pd.DataFrame([entry], columns=['Time', 'Username', 'Action'])
+        except AttributeError:
+            pass
 
     def saveActionData(self):
         """
@@ -332,15 +361,20 @@ class Hangman:
 
         return scoreboard
 
-    def updateScoreboard(self):
+    def updateScoreboard(self, success=True):
 
-        # Adding 1 to the user's score to reduce space complexity.
+        # Adding 1 to the user's score to reduce space complexity
+        if success:
+            counter = 1
+        else:
+            counter = 0
+
         try:
-            self.scoreboard.at[self.username, 'Points'] += 1
+            self.scoreboard.at[self.username, 'Points'] += counter
         except IndexError:
-            self.scoreboard = pd.concat([self.scoreboard, [self.username, 1]])
-        except ValueError:
-            self.scoreboard = pd.DataFrame([self.username, 1], columns=['Username', 'Points'])
+            self.scoreboard = pd.concat([self.scoreboard, [self.username, counter]])
+        except AttributeError:
+            self.scoreboard = pd.DataFrame([[self.username, counter]], columns=['Username', 'Points'])
             self.scoreboard = self.scoreboard.set_index('Username')
 
     def showTop10(self):
@@ -352,10 +386,18 @@ class Hangman:
 
         pointsPerGame = 10
 
-        # Sorting entries by Points, with highest first.
-        self.scoreboard = self.scoreboard.sort_values('Points', ascending=False)
-        # Multiplying by points per game to get total points.
-        self.scoreboard.loc[:, 'Points'] = self.scoreboard.loc[:, 'Points'] * pointsPerGame
+        try:
+            # Sorting entries by Points, with highest first.
+            self.scoreboard = self.scoreboard.sort_values('Points', ascending=False)
+            # Multiplying by points per game to get total points.
+            self.scoreboard.loc[:, 'Points'] = self.scoreboard.loc[:, 'Points'] * pointsPerGame
 
-        # Showing top 10 scorers.
-        print(self.scoreboard.head(10))
+            # Showing top 10 scorers.
+            print('=====THE LEADERBOARD=====')
+            print(self.scoreboard.head(10))
+            print('=========================')
+        except AttributeError:
+            pass
+
+if __name__ == '__main__':
+    H = Hangman()
