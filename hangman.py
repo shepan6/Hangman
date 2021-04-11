@@ -186,7 +186,7 @@ class Hangman:
             # update self.user_answer to include character
             correct_chars = list(set(user_chars).intersection(unique_answer_chars))
             new_user_answer = re.sub(string=self.answer.lower(),
-                                     pattern=r'[^{}]'.format(''.join(correct_chars)),
+                                     pattern=r'[^{} ]'.format(''.join(correct_chars)),
                                      repl='_')
             new_user_answer = ' '.join(list(new_user_answer))
 
@@ -312,6 +312,7 @@ class Hangman:
         self.addActionData('qg')
         self.saveActionData()
         self.showTop10()
+        self.saveScoreboard()
         if self.username != 'quit':
             print('Goodbye, {}!'.format(self.username))
         else:
@@ -331,8 +332,9 @@ class Hangman:
 
         try:
             entry = [datetime.today(), self.username, action]
+            entry = pd.DataFrame([entry], columns=['Time', 'Username', 'Action'])
             try:
-                entry = pd.concat([self.ux_data, np.array(entry)], axis=0)
+                self.ux_data = pd.concat([self.ux_data, entry], axis=0)
             except:
                 self.ux_data = pd.DataFrame([entry], columns=['Time', 'Username', 'Action'])
         except AttributeError:
@@ -344,7 +346,7 @@ class Hangman:
         :return:
         """
 
-        self.ux_data.to_csv(os.path.join(os.getcwd(), "DATA", 'ux_data.csv'))
+        self.ux_data.loc[:, 'Time':].to_csv(os.path.join(os.getcwd(), "DATA", 'ux_data.csv'))
 
     # -----
     # SCOREBOARD
@@ -377,6 +379,10 @@ class Hangman:
             self.scoreboard = pd.DataFrame([[self.username, counter]], columns=['Username', 'Points'])
             self.scoreboard = self.scoreboard.set_index('Username')
 
+    def saveScoreboard(self):
+
+        self.scoreboard.to_csv(os.path.join(os.getcwd(), 'DATA', 'scoreboard.csv'))
+
     def showTop10(self):
         """
         Presents top 10 scoring users on the terminal
@@ -388,13 +394,13 @@ class Hangman:
 
         try:
             # Sorting entries by Points, with highest first.
-            self.scoreboard = self.scoreboard.sort_values('Points', ascending=False)
+            scoreboard = self.scoreboard.sort_values('Points', ascending=False)
             # Multiplying by points per game to get total points.
-            self.scoreboard.loc[:, 'Points'] = self.scoreboard.loc[:, 'Points'] * pointsPerGame
+            scoreboard.loc[:, 'Points'] = scoreboard.loc[:, 'Points'] * pointsPerGame
 
             # Showing top 10 scorers.
             print('=====THE LEADERBOARD=====')
-            print(self.scoreboard.head(10))
+            print(scoreboard.head(10))
             print('=========================')
         except AttributeError:
             pass
