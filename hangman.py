@@ -8,6 +8,8 @@ import time
 class Hangman:
     """
     Get ready with some Hangman fun with the Hangman game class!
+    Interpreting from the given problem specification, the Hangman game consists of
+    one word only.
     """
 
     def __init__(self):
@@ -16,7 +18,7 @@ class Hangman:
         # Number of points the user has in the game
         self.points = 0
         # Answers to the Hangman game
-        self.answers = self.readAnswers(os.path.join(os.getcwd(), 'DATA', 'answers.csv'))
+        self.answer = self.getAnswer(os.path.join(os.getcwd(), 'DATA', 'answers.csv'))
         self.scoreboard = self.loadScoreboard(
             os.path.join(os.getcwd(), 'DATA', 'scoreboard.csv')
         )
@@ -77,10 +79,10 @@ class Hangman:
         return name
 
     @staticmethod
-    def readAnswers(answer_path):
+    def getAnswer(answer_path):
         """
         Reads answer file
-        :return:
+        :return
         answers : List of Strings
             Answers to the Hangman game
         """
@@ -88,8 +90,10 @@ class Hangman:
         answers = pd.read_csv(answer_path, index_col=0)
         # Randomly shuffles answers to add variation to the game instances
         answers = answers.sample(frac=1)
+        # Selecting the first answer in the shuffled dataframe.
+        answer = answers.iloc[0, 0]
 
-        return answers
+        return answer
 
     # -----
     # ACTION DATA
@@ -120,21 +124,6 @@ class Hangman:
         return scoreboard_path
 
 
-class Round(Hangman):
-
-    def __init__(self, answer):
-        """
-
-        :param
-        answer: String
-            Answer to be guessed by user
-        """
-
-        super().__init__()
-        self.word = answer
-
-    def setUpRound(self):
-        pass
 
 
 """

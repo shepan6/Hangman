@@ -1,4 +1,8 @@
+import os
 import unittest
+
+import pandas as pd
+
 import hangman
 
 
@@ -32,8 +36,14 @@ class TestHangman(unittest.TestCase):
                              {}""".format(v1 and v2, true_results[tc][0] and true_results[tc][1],
                                           tc))
 
-    def test_readAnswers(self):
-        pass
+    def test_getAnswer(self):
+
+        answer_path = os.path.join(os.getcwd(), 'DATA', 'answers.csv')
+        potential_answers = pd.read_csv(answer_path, index_col=0)['Answer'].values.tolist()
+        result = hangman.Hangman.getAnswer(answer_path)
+
+        self.assertEqual(type(result), str)
+        self.assertTrue(result in potential_answers)
 
     def test_addActionData(self):
         pass
