@@ -4,6 +4,7 @@ import os
 import re
 import time
 
+
 class Hangman:
     """
     Get ready with some Hangman fun with the Hangman game class!
@@ -25,13 +26,14 @@ class Hangman:
         except:
             self.user_data = None
 
-    def checkValidName(self, name):
+    @staticmethod
+    def checkValidName(name):
         """
         Checks that the inputted name from the user is a valid name (i.e. one which contains
         alphabetic characters only. The regular expression warrants the user putting in their first
         (and surname).
         Names are also restricted to 50 characters maximum so that, when it comes to
-        storing names into a SQL database, we can ensure that name string will not go ad infinitum.
+        storing names into a SQL database, we can ensure that name string will not go ad finitum.
         :param
         name: String
             Inputted name from user
@@ -41,7 +43,8 @@ class Hangman:
             2) If length of the name is under 50 characters
         """
 
-        return re.match(pattern=r'([a-zA-Z]+[ -]?)+', string=name), len(name) <= 50
+        return bool(re.fullmatch(pattern=r'([a-zA-Z]+[ -]?)+', string=name)),\
+               len(name) <= 50
 
     def getName(self):
         """
@@ -56,6 +59,7 @@ class Hangman:
 
         # Tracker variable for while loop to track if inputted name is valid
         valid = False
+        name = None
 
         while not valid:
             name = str(input('Name >> '))
@@ -72,7 +76,8 @@ class Hangman:
 
         return name
 
-    def readAnswers(self, answer_path):
+    @staticmethod
+    def readAnswers(answer_path):
         """
         Reads answer file
         :return:
@@ -107,6 +112,14 @@ class Hangman:
 
         pass
 
+    @staticmethod
+    def loadScoreboard(scoreboard_path):
+
+        scoreboard = None
+
+        return scoreboard_path
+
+
 class Round(Hangman):
 
     def __init__(self, answer):
@@ -117,10 +130,11 @@ class Round(Hangman):
             Answer to be guessed by user
         """
 
+        super().__init__()
         self.word = answer
 
     def setUpRound(self):
-
+        pass
 
 
 """
