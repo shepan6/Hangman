@@ -1,13 +1,21 @@
-This file will briefly describe the data to be measured during gameplay
+This file will briefly describe the scoreboard data and ux data, which will be measure during gameplay
 to allow for future user experience analysis
 
+SCOREBOARD
+---------
+Firstly, the program will assume that games played byt he same username will be attributed to a single user.
+
+- Username : This will be the index column.
+- Points : This will contain number of total points across all games.
+
+UX DATA
+---------
 - Username : name user inputted into the game instance. This will obviously
  bring complications, including whether two games conducted with the same username actually
  comes from the same user. A workaround would be a personalised profile (with a password).
  However, for simplicity, we will omit this capability.
-- Action : users action, which is split into 3 main events (started game [sg], started round[sr]
-(where r will represent the round number), input character [i_] (_ refers to the
- character inputted), completed round [cr], completed game [cg], quit game [qg]).
+- Action : users action, which is split into 3 main events (started game [sg], input character [i_] (_ refers to the
+ character inputted), completed game [cg], quit game [qg]).
 This will be stored as two-character string to reduce memory whilst allowing for
 human interpretability of the data.
 - Time : This will record the time point when a user conducted a certain action.

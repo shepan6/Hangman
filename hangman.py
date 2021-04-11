@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import re
-import time
+from datetime import datetime
 
 
 class Hangman:
@@ -14,19 +14,24 @@ class Hangman:
 
     def __init__(self):
         # Prompt user for name
-        self.username = self.getName()
-        # Number of points the user has in the game
-        self.points = 0
+        self.username = self.getName(user=True)
+        # To also give the stickman a name!
+        self.hangman_name = self.getName(user=False)
         # Answers to the Hangman game
         self.answer = self.getAnswer(os.path.join(os.getcwd(), 'DATA', 'answers.csv'))
+        # Scoreboard data
         self.scoreboard = self.loadScoreboard(
             os.path.join(os.getcwd(), 'DATA', 'scoreboard.csv')
         )
+        # User's answer
+        self.user_answer = None
         # User Interaction data
         try:
-            self.user_data = pd.read_csv(os.path.join(os.getcwd(), 'DATA', 'user_data.csv'))
+            self.ux_data = pd.read_csv(os.path.join(os.getcwd(), 'DATA', 'ux_data.csv'))
         except:
-            self.user_data = None
+            self.ux_data = None
+        # Log starting the game
+        self.addActionData('sg')
 
     @staticmethod
     def checkValidName(name):
@@ -45,14 +50,17 @@ class Hangman:
             2) If length of the name is under 50 characters
         """
 
-        return bool(re.fullmatch(pattern=r'([a-zA-Z]+[ -]?)+', string=name)),\
-               len(name) <= 50
+        return bool(re.fullmatch(pattern=r'([a-zA-Z]+[ -]?)+', string=name)), len(name) <= 50
 
-    def getName(self):
+    def getName(self, user=True):
         """
-        Prompts user for name, which will be stored throughout the game.
+        Prompts user for both their name and the stickman's name, which will be stored throughout the game.
         The method also checks that input name string is a valid name (i.e. does not
         contain numbers, etc.)
+
+        :param
+        user : Boolean
+            Flag to switch between user and stickman name entry
 
         :return
         name : String
@@ -64,12 +72,18 @@ class Hangman:
         name = None
 
         while not valid:
-            name = str(input('Name >> '))
+            if user:
+                s = 'Your'
+            else:
+                s = 'Stickman\'s'
+
+            name = str(input('{} Name >> '.format(s)))
+
             v1, v2 = self.checkValidName(name)
             valid = v1 and v2
             if name == 'quit':
                 # Adding action data to say that user has quit game.
-                self.addActionData('qg')
+                self.quitGame()
                 break
             if not v1:
                 print('Please type a valid name (e.g. Joe Blogs or Joe)')
@@ -96,17 +110,147 @@ class Hangman:
         return answer
 
     # -----
+    # GAMEPLAY
+    # -----
+
+    def setUpRound(self):
+
+        # To -1 character to remove final space
+        user_answer = re.sub(string=self.answer, pattern=r'\w', repl='_ ')[:-1]
+        print(user_answer)
+
+        return user_answer
+
+    def inputChar(self):
+        """
+        Asks user for next character guess in the game and checks whether the text input is valid
+        (i.e. one character long and is a alphabetic character.)
+
+        :return
+        char : String
+            Valid character
+        """
+
+        char = None
+
+        while char is None:
+            char = str(input('>>>'))
+            if len(char) != 1:
+                # Either entered 0 or 2+ characters
+                char = None
+                print('Please insert only one character!')
+                if char == 'quit':
+                    self.quitGame()
+                    break
+            elif char.isdigit():
+                char = None
+                print('Please insert a letter from the alphabet!')
+
+        return char
+
+    def updateUserAnswer(self, user_chars):
+        """
+        Checks whether the most recent guess of character is in the answer or not.
+
+        :param
+        user_chars: List of characters (string)
+            List of attempted characters
+        :return
+        correct : Boolean
+            Is the most recent character guess in the word or not?
+        """
+
+        unique_answer_chars = set(list(self.answer))
+
+        # Checking most recent character guess against unique set of characters in answer.
+        if user_chars[-1] in unique_answer_chars:
+            # Correct guess
+            # update self.user_answer to include character
+            correct_chars = list(set(user_chars).intersection(unique_answer_chars))
+            new_user_answer = re.sub(string=self.answer.lower(),
+                                     pattern=r'[^{}]'.format(''.join(correct_chars)),
+                                     repl='_')
+            new_user_answer = ' '.join(list(new_user_answer))
+
+            self.user_answer = new_user_answer
+            correct = True
+        else:
+            # Incorrect guess
+            correct = False
+
+        return correct
+
+    def updateHangmanGraphic(self, incorrect_guesses):
+        pass
+
+    def game(self):
+
+        # Number of incorrect guesses, as specified.
+        incorrect_guesses = 6
+        # Stores all character guesses
+        user_guesses = []
+        # The current answer presented to the user.
+        self.user_answer = self.setUpRound()
+
+        while self.user_answer.count('_') > 0 and incorrect_guesses <= 0:
+            # Ask user for a valid character
+            char = self.inputChar()
+
+            # Log action into database
+            self.addActionData('i{}'.format(char))
+
+            if char in user_guesses:
+                print('''You have already guessed {} (along with {}!)
+                , please try another character.'''.format(char,
+                                                          ', '.join(list(set(user_guesses) - set(char)))))
+                continue
+            else:
+                # Adding user guess to user_guesses list
+                user_guesses.append(char)
+
+            correct = self.updateUserAnswer(user_guesses)
+
+            if not correct:
+                print('Poor {}!!! {} is not in the word(s)! Sorry, {}'.format(self.hangman_name,
+                                                                              user_guesses[-1],
+                                                                              self.username))
+                incorrect_guesses -= 1
+                self.updateHangmanGraphic(incorrect_guesses)
+            else:
+                print('{} is in the word(s)! Good job, {}!'.format(user_guesses[-1], self.username))
+
+        if incorrect_guesses <= 0:
+            print("""Uh oh!! It looks like {} is dead! Sorry, {},
+            maybe you can save {} next time!!""".format(self.username, self.hangman_name,
+                                                        self.hangman_name))
+        elif self.user_answer.count('_') == 0:
+            print("""WELL DONE {}!!! {} can live for another day!""".format(self.username, self.hangman_name))
+            self.updateScoreboard()
+
+        self.quitGame()
+
+    def quitGame(self):
+        self.addActionData('qg')
+        self.saveActionData()
+        print('Goodbye, {}!'.format(self.username))
+
+    # -----
     # ACTION DATA
     # -----
 
     def addActionData(self, action=''):
         """
-        Adds Action entry to self.user_data
-        :param action:
-        :return:
+        Updates Action entry to self.user_data
+        :param
+        action: String
+            Two-character long reference to game action
         """
 
-        pass
+        entry = [datetime.today(), self.username, action]
+        try:
+            entry = pd.concat([self.ux_data, np.array(entry)], axis=0)
+        except:
+            self.ux_data = pd.DataFrame(entry, columns=['Time', 'Username', 'Action'])
 
     def saveActionData(self):
         """
@@ -114,16 +258,23 @@ class Hangman:
         :return:
         """
 
-        pass
+        self.ux_data.to_csv(os.path.join(os.getcwd(), "DATA", 'ux_data.csv'))
+
+
+    # -----
+    # SCOREBOARD
+    # -----
 
     @staticmethod
     def loadScoreboard(scoreboard_path):
 
-        scoreboard = None
+        scoreboard = pd.read_csv(scoreboard_path, index_col=0)
 
-        return scoreboard_path
+        return scoreboard
 
+    def updateScoreboard(self):
 
+        self.scoreboard.at[self.username, 'Points'] += 10
 
 
 """

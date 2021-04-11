@@ -45,6 +45,10 @@ class TestHangman(unittest.TestCase):
         self.assertEqual(type(result), str)
         self.assertTrue(result in potential_answers)
 
+    def test_updateUserAnswer(self):
+
+        pass
+
     def test_addActionData(self):
         pass
 
